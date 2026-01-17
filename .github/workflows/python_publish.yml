@@ -1,0 +1,28 @@
+name: Publish Python Artifacts
+run-name: Publish Python Artifacts for Version ${{ inputs.substrait_version }}
+
+concurrency:
+  group: python-publish
+  cancel-in-progress: false
+
+on:
+  workflow_call:
+    inputs:
+      substrait_version:
+        description: Substrait version to publish artifacts for
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      substrait_version:
+        description: Substrait version to generate protobuf for
+        required: true
+        type: string
+
+jobs:
+  # TODO: invoke workflows for other artifacts (i.e ANTLR, Extensions, etc)
+  publish-python-protobuf:
+    uses: ./.github/workflows/python_protobuf.yml
+    secrets: inherit
+    with:
+      substrait_version: ${{ github.event.inputs.substrait_version }}

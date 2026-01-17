@@ -1,9 +1,9 @@
 [project]
 name = "substrait-protobuf"
-version = "0.1.0"
-description = "Substrait Protocol Buffer definitions"
+version = "0.0.0"
+description = "Generated Substrait Protocol Buffer Code"
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
     {name = "Substrait Contributors", email = "substrait@googlegroups.com"}
@@ -31,5 +31,5 @@ where = ["src"]
 namespaces = true
 
 [build-system]
-requires = ["setuptools>=61.0.0", "setuptools_scm[toml]>=6.2.0"]
+requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"

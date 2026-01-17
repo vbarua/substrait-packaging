@@ -1,0 +1,138 @@
+name: Publish Python Protobufs
+run-name: Publish Python Protobufs for Version ${{ inputs.substrait_version }}
+
+concurrency:
+  group: python-protobuf
+  cancel-in-progress: false
+
+on:
+  workflow_call:
+    inputs:
+      substrait_version:
+        description: Substrait version to generate protobuf for
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      substrait_version:
+        description: Substrait version to generate protobuf for
+        required: true
+        type: string
+
+env:
+  SUBSTRAIT_VERSION: ${{ github.event.inputs.substrait_version }}
+  BRANCH_NAME: "python/substrait-protobuf/${{ github.event.inputs.substrait_version }}"
+
+jobs:
+
+  prechecks:
+    runs-on: ubuntu-latest
+    outputs:
+      branch_exists: ${{ steps.check-branch.outputs.exists }}
+      artifact_exists: ${{ steps.check-artifact.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check Branch Existence
+        id: check-branch
+        run: |
+          EXISTS=$(./scripts/branch_exists.sh "$BRANCH_NAME")
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+      - name: Check Artifact Existence on PyPI
+        id: check-artifact
+        run: |
+          EXISTS=$(./scripts/python/pypi_package_exists.sh substrait-protobuf "$SUBSTRAIT_VERSION")
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+
+  generate:
+    runs-on: ubuntu-latest
+    needs: prechecks
+    steps:
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          # Pin uv version
+          version: "0.9.25"
+
+      - name: Install Buf
+        uses: bufbuild/buf-setup-action@v1.50.0
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Generate GitHub App Token for Pushing Branches and Tags
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.PACKAGER_ID }}
+          private-key: ${{ secrets.PACKAGER_KEY }}
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure GitHub User
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf https://github.com/
+
+      - name: Checkout substrait-protobuf
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Attach and Commit substrait Repo
+        run: ./scripts/attach_subtree.sh
+
+      - name: Install Python Dependencies
+        working-directory: python/substrait-protobuf
+        run: uv sync --all-extras
+
+      - name: Generate Protobuf Code
+        working-directory: python/substrait-protobuf
+        run: ./generate_protobuf.sh
+
+      - name: Set Version
+        working-directory: python/substrait-protobuf
+        run: uv version $SUBSTRAIT_VERSION
+
+      - name: Commit Generated Code
+        run: |
+          git add python/substrait-protobuf
+          git commit -m "Generated protobuf code for Substrait version $SUBSTRAIT_VERSION"
+
+      - name: Run pytest Checks
+        working-directory: python/substrait-protobuf
+        run: uv run pytest
+
+      - name: Push and Tag Generated Code
+        if: needs.prechecks.outputs.branch_exists == 'false'
+        run: |
+          git push origin HEAD:$BRANCH_NAME
+          git tag "python/substrait-protobuf/$SUBSTRAIT_VERSION"
+          git push origin "python/substrait-protobuf/$SUBSTRAIT_VERSION"
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [prechecks, generate]
+    if: needs.prechecks.outputs.artifact_exists == 'false'
+    steps:
+      - name: Checkout substrait-protobuf
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+          fetch-depth: 0
+      - name: TODO PUBLISH PACKAGE
+        run: echo TODO
+

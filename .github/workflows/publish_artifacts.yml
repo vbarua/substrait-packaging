@@ -1,0 +1,27 @@
+name: Publish Substrait Artifacts
+run-name: Publish Substrait Artifacts for Version ${{ inputs.substrait_version }}
+
+concurrency:
+  group: publish-artifacts
+  cancel-in-progress: false
+
+on:
+  workflow_call:
+    inputs:
+      substrait_version:
+        description: Substrait version to generate artifacts for
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      substrait_version:
+        description: Substrait version to generate artifacts for
+        required: true
+        type: string
+
+jobs:
+  publish-python-artifacts:
+    uses: ./.github/workflows/python_publish.yml
+    secrets: inherit
+    with:
+      substrait_version: ${{ github.event.inputs.substrait_version }}

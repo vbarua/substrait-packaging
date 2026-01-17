@@ -5,7 +5,7 @@ package testprotos;
 // Fake "External" Protobufs utilizing substrait protos
 
 // Used to verify that external users can define their own messages using
-// Substrait message, and use them with substrait-protobuf.
+// Substrait messages
 
 import "substrait/algebra.proto";
 import "substrait/type.proto";
