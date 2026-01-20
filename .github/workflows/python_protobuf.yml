@@ -21,24 +21,24 @@ on:
 
 env:
   SUBSTRAIT_VERSION: ${{ github.event.inputs.substrait_version }}
-  BRANCH_NAME: "python/substrait-protobuf/${{ github.event.inputs.substrait_version }}"
+  TAG_NAME: "python/substrait-protobuf/${{ github.event.inputs.substrait_version }}"
 
 jobs:
 
   prechecks:
     runs-on: ubuntu-latest
     outputs:
-      branch_exists: ${{ steps.check-branch.outputs.exists }}
+      tag_exists: ${{ steps.check-tag.outputs.exists }}
       artifact_exists: ${{ steps.check-artifact.outputs.exists }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check Branch Existence
-        id: check-branch
+      - name: Check Tag Existence
+        id: check-tag
         run: |
-          EXISTS=$(./scripts/branch_exists.sh "$BRANCH_NAME")
+          EXISTS=$(./scripts/tag_exists.sh "$TAG_NAME")
           echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
       - name: Check Artifact Existence on PyPI
         id: check-artifact
@@ -66,7 +66,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
-      - name: Generate GitHub App Token for Pushing Branches and Tags
+      - name: Generate GitHub App Token for Pushing Tags
         uses: actions/create-github-app-token@v2
         id: app-token
         with:
@@ -117,7 +117,7 @@ jobs:
         run: uv run pytest
 
       - name: Tag and Push Generated Code
-        if: needs.prechecks.outputs.branch_exists == 'false'
+        if: needs.prechecks.outputs.tag_exists == 'false'
         run: |
           git tag "python/substrait-protobuf/$SUBSTRAIT_VERSION"
           git push origin "python/substrait-protobuf/$SUBSTRAIT_VERSION"
@@ -130,7 +130,7 @@ jobs:
       - name: Checkout substrait-protobuf
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.BRANCH_NAME }}
+          ref: ${{ env.TAG_NAME }}
           fetch-depth: 0
       - name: TODO PUBLISH PACKAGE
         run: echo TODO
