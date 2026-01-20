@@ -43,7 +43,7 @@ jobs:
       - name: Check Artifact Existence on PyPI
         id: check-artifact
         run: |
-          EXISTS=$(./scripts/python/pypi_package_exists.sh substrait-protobuf "$SUBSTRAIT_VERSION")
+          EXISTS=$(./scripts/python/pypi_package_exists.sh vbarua-substrait-protobuf "$SUBSTRAIT_VERSION")
           echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
 
   generate:
