@@ -1,5 +1,5 @@
 [project]
-name = "substrait-antlr"
+name = "vbarua-substrait-antlr"
 version = "0.0.0"
 description = "Generated Substrait ANTLR Parser Code"
 readme = "README.md"

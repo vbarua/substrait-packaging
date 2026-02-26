@@ -134,4 +134,4 @@ jobs:
       - name: Smoke Test (source distribution)
         run: pixi run uv run --isolated --no-project --with dist/*.tar.gz tests/test_proto.py
       - name: Publish
-        run: pixi run uv publish
+        run: pixi run uv publish --index testpypi
