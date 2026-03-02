@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-protobuf-prechecks, python-protobuf-generate]
     if: needs.python-protobuf-prechecks.outputs.artifact_exists == 'false'
-    environment: pypi
+    environment: vbaruapypi
     permissions:
       id-token: write
       contents: read
